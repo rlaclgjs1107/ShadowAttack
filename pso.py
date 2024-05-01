@@ -131,10 +131,10 @@ class PSO:
         if self.targeted:
             target = parameters.get("target")
             confidence = float(1 - predict[target])
-            success = torch.argmax(predict) == target
+            success = (torch.argmax(predict) == target).item()
         else:
             confidence = float(predict[self.label])
-            success = torch.argmax(predict) != self.label
+            success = (torch.argmax(predict) != self.label).item()
 
         self.num_query += img.shape[0]
         return confidence, success, predict
