@@ -18,6 +18,7 @@ from utils import judge_mask_type
 from utils import draw_shadow
 from utils import load_mask
 from utils import pre_process_image
+from utils import seed_everything
 from collections import Counter
 from torchvision import transforms
 
@@ -26,6 +27,7 @@ with open('params.json', 'rb') as f:
     class_n_gtsrb = params['GTSRB']['class_n']
     class_n_lisa = params['LISA']['class_n']
     device = params['device']
+    seed_everything(params['seed'])
     position_list, mask_list = load_mask()
 
 parser = argparse.ArgumentParser(description="Adversarial attack by shadow")
