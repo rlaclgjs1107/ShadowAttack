@@ -68,5 +68,6 @@
             "42:End of no passing by vehicles over 3.5 metric tons"
         ]
     },
-    "device": "cuda:0"
+    "device": "cuda:0",
+    "seed": 42
 }

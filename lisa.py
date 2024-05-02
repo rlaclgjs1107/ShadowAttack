@@ -15,11 +15,13 @@ from utils import draw_shadow
 from utils import shadow_edge_blur
 from utils import judge_mask_type
 from utils import load_mask
+from utils import seed_everything
 
 with open('params.json', 'r') as config:
     params = json.load(config)
     class_n = params['LISA']['class_n']
     device = params['device']
+    seed_everything(params['seed'])
     position_list, _ = load_mask()
 
 
@@ -211,10 +213,10 @@ def test_single_image(img_path, ground_truth, adv_model=False):
 if __name__ == '__main__':
 
     # model training
-    # train_model(adv_train=False)
+    train_model(adv_train=False)
 
     # model testing
-    # test_model(adv_model=False)
+    test_model(adv_model=False)
 
     # test a single image
     test_single_image('./tmp/lisa_30.jpg', 9, adv_model=False)

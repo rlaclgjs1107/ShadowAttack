@@ -13,6 +13,16 @@ from shapely.geometry import Polygon
 from itertools import permutations
 
 
+def seed_everything(seed: int = 42):
+    random.seed(seed)
+    np.random.seed(seed)
+    os.environ["PYTHONHASHSEED"] = str(seed)
+    torch.manual_seed(seed) # type: ignore
+    torch.cuda.manual_seed(seed)  # type: ignore
+    torch.backends.cudnn.deterministic = True  # type: ignore
+    torch.backends.cudnn.benchmark = False  # type: ignore
+
+
 def load_lisa(database_path):
 
     train_path = os.path.join(database_path, 'train')
