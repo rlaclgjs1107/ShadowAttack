@@ -108,7 +108,7 @@ def judge_inside(vertices, p):
 def contains(vertices, p):
 
     vertices = np.append(vertices, vertices[0].reshape(1, 2), 0)
-    res = np.zeros(p.shape[0], dtype=np.bool)
+    res = np.zeros(p.shape[0], dtype=np.bool_)
     x = p[0:, 0]
     for i in range(len(vertices) - 1):
         (x1, _), (x2, _) = vertices[i], vertices[i + 1]
