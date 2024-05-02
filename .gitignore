@@ -130,3 +130,5 @@ dmypy.json
 
 *.pth
 *.pkl
+
+adv_img/*
