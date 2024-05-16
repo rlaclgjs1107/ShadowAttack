@@ -1,20 +1,24 @@
 # -*- coding: utf-8 -*-
 
 import gc
+import json
+import os
 import pickle
 import time
-import json
+
 import cv2
 import numpy as np
 import torch
 import torch.nn as nn
-from torchvision import transforms
 from torch.utils.data.dataloader import DataLoader
-from utils import SmoothCrossEntropyLoss
-from utils import draw_shadow
-from utils import shadow_edge_blur
-from utils import judge_mask_type
-from utils import load_mask
+from torchvision import transforms
+from utils import (
+    SmoothCrossEntropyLoss,
+    draw_shadow,
+    judge_mask_type,
+    load_mask,
+    shadow_edge_blur,
+)
 
 with open('params.json', 'r') as config:
     params = json.load(config)
@@ -333,4 +337,19 @@ if __name__ == '__main__':
     # test_model(adv_model=False)
 
     # test a single image
-    test_single_image('./tmp/adv_img.png', 1, adv_model=False)
+    # test_single_image('./tmp/adv_img.png', 1, adv_model=False)
+    
+    images = os.listdir("./videos/test-frames/oC3yhEy5cP")
+    images.sort()
+    
+    fail = 0
+    failed_images = []
+    for img in images:
+        print(img)
+        idx, res = test_single_image(f"./videos/test-frames/oC3yhEy5cP/{img}", 1, adv_model=False)
+        if res == False:
+            fail += 1
+            failed_images.append(img)
+    print(f"Failed: {fail}")
+    print(failed_images)
+    
