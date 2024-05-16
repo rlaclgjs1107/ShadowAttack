@@ -131,4 +131,6 @@ dmypy.json
 *.pth
 *.pkl
 
+videos/*-frames
+
 adv_img/*
