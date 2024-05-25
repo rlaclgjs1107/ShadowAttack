@@ -1,21 +1,26 @@
 # -*- coding: utf-8 -*-
 
 import gc
-import cv2
-import time
 import json
+import os
 import pickle
+import sys
+import time
+
+import cv2
+import numpy as np
 import torch
 import torch.nn as nn
-import numpy as np
-from torchvision import transforms
 from torch.utils.data.dataloader import DataLoader
-from utils import SmoothCrossEntropyLoss
-from utils import draw_shadow
-from utils import shadow_edge_blur
-from utils import judge_mask_type
-from utils import load_mask
-from utils import seed_everything
+from torchvision import transforms
+from utils import (
+    SmoothCrossEntropyLoss,
+    draw_shadow,
+    judge_mask_type,
+    load_mask,
+    seed_everything,
+    shadow_edge_blur,
+)
 
 with open('params.json', 'r') as config:
     params = json.load(config)
@@ -23,6 +28,21 @@ with open('params.json', 'r') as config:
     device = params['device']
     seed_everything(params['seed'])
     position_list, _ = load_mask()
+
+class Logger:
+    def __init__(self, file: str):
+        self.file = file
+        self.log: list[str] = []
+
+    def add(self, text: str, end: str = "\n", verbose: bool = True):
+        if verbose:
+            print(text, end=end)
+        self.log.append(text+end)
+
+    def save(self):
+        with open(self.file, 'w') as f:
+            for line in self.log:
+                f.write(line)
 
 
 class TrafficSignDataset(torch.utils.data.Dataset):
@@ -95,7 +115,7 @@ def model_epoch(training_model, data_loader, train=False, optimizer=None, schedu
     return acc, loss
 
 
-def training(training_model, train_data, train_labels, test_data, test_labels, adv_train=False):
+def training(training_model, train_data, train_labels, test_data, test_labels, adv_train=False, logger: Logger = Logger("log.txt")):
 
     num_epoch, batch_size = 100, 16
     optimizer = torch.optim.SGD(
@@ -123,11 +143,11 @@ def training(training_model, train_data, train_labels, test_data, test_labels, a
         with torch.no_grad():
             test_acc, test_loss = model_epoch(training_model, test_loader)
 
-        print(f'[{epoch + 1}/{num_epoch}] {round(time.time() - epoch_start_time, 2)}', end=' ')
-        print(f'Train Acc: {round(float(train_acc / train_set.__len__()), 4)}', end=' ')
-        print(f'Loss: {round(float(train_loss / train_set.__len__()), 4)}', end=' | ')
-        print(f'Test Acc: {round(float(test_acc / test_set.__len__()), 4)}', end=' ')
-        print(f'Loss: {round(float(test_loss / test_set.__len__()), 4)}')
+        logger.add(f'[{epoch + 1}/{num_epoch}] {round(time.time() - epoch_start_time, 2)}', end=' ')
+        logger.add(f'Train Acc: {round(float(train_acc / train_set.__len__()), 4)}', end=' ')
+        logger.add(f'Loss: {round(float(train_loss / train_set.__len__()), 4)}', end=' | ')
+        logger.add(f'Test Acc: {round(float(test_acc / test_set.__len__()), 4)}', end=' ')
+        logger.add(f'Loss: {round(float(test_loss / test_set.__len__()), 4)}')
 
         del extra_train, extra_labels, train_set, train_loader
         gc.collect()
@@ -166,7 +186,7 @@ def train_model(adv_train=False):
     training(training_model, train_data, train_labels, test_data, test_labels, adv_train)
 
 
-def test_model(adv_model=False):
+def test_model(adv_model=False, logger: Logger = Logger("log.txt")):
 
     trained_model = LisaCNN(n_class=class_n).to(device)
     trained_model.load_state_dict(
@@ -184,10 +204,10 @@ def test_model(adv_model=False):
     with torch.no_grad():
         test_acc, _ = model_epoch(trained_model, test_loader)
 
-    print(f'Test Acc: {round(float(test_acc / test_set.__len__()), 4)}')
+    logger.add(f'Test Acc: {round(float(test_acc / test_set.__len__()), 4)}')
 
 
-def test_single_image(img_path, ground_truth, adv_model=False):
+def test_single_image(img_path, ground_truth, adv_model=False, logger: Logger = Logger("log.txt")):
 
     trained_model = LisaCNN(n_class=class_n).to(device)
     trained_model.load_state_dict(
@@ -204,19 +224,32 @@ def test_single_image(img_path, ground_truth, adv_model=False):
     index = int(torch.argmax(predict).data)
     confidence = float(predict[index].data)
 
-    print(f'Correct: {index==ground_truth}', end=' ')
-    print(f'Predict: {index} Confidence: {confidence*100}%')
+    logger.add(f'Correct: {index==ground_truth}', end=' ')
+    logger.add(f'Predict: {index} Confidence: {confidence*100}%')
 
     return index, index == ground_truth
 
 
 if __name__ == '__main__':
-
-    # model training
-    train_model(adv_train=False)
-
-    # model testing
-    test_model(adv_model=False)
-
-    # test a single image
-    test_single_image('./tmp/lisa_30.jpg', 9, adv_model=False)
+    if len(sys.argv) != 3:
+        print("Usage: python lisa.py <frames_dir> <log_path>")
+        sys.exit(1)
+    
+    frames_dir = sys.argv[1]
+    logger = Logger(sys.argv[2])
+    
+    images = os.listdir(f"./videos/{frames_dir}")
+    images.sort(key=lambda x: int(x.split(".")[0]))
+    logger.add(f"Total frames: {len(images)}")
+    
+    fail = 0
+    failed_images = []
+    for img in images:
+        idx, res = test_single_image(f"./videos/{frames_dir}/{img}", 9, adv_model=False, logger=logger)
+        if res == False:
+            fail += 1
+            failed_images.append(img)
+    
+    logger.add(f"Failed: {fail}")
+    logger.add(str(failed_images))
+    logger.save()
