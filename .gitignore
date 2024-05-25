@@ -132,5 +132,7 @@ dmypy.json
 *.pkl
 
 videos/*-frames
+videos/*
+logs/*
 
 adv_img/*
