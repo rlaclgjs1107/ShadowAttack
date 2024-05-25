@@ -88,10 +88,6 @@ def main(file_path: Path):
     output_base_path = str(VIDEO_DIR / f"{video_base_name}-frames") + "/"
     if not os.path.exists(output_base_path):
         os.makedirs(output_base_path)
-    
-    for obj in objects:
-        if not os.path.exists(output_base_path + obj.object_id):
-            os.makedirs(output_base_path + obj.object_id)
 
     for obj in objects:
         frame_count = obj.sequence[-1].frame + 1
@@ -107,9 +103,8 @@ def main(file_path: Path):
         for obj in objects:
             for pos in obj.sequence:
                 if pos.frame == frame_idx:
-                    crop_and_save_frame(frame, pos, output_base_path + obj.object_id)
+                    crop_and_save_frame(frame, pos, output_base_path)
         frame_idx += 1
-
 
 
 if __name__ == "__main__":
