@@ -245,6 +245,7 @@ if __name__ == '__main__':
     fail = 0
     failed_images = []
     for img in images:
+        logger.add(f"[{img:>7s}] ", end="")
         idx, res = test_single_image(f"./videos/{frames_dir}/{img}", 9, adv_model=False, logger=logger)
         if res == False:
             fail += 1
